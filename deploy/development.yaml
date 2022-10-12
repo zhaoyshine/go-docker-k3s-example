@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k3sdemo-deployment
+  namespace: k3sdemo
+  labels:
+    app: app-k3sdemo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: app-k3sdemo
+  template:
+    metadata:
+      labels:
+        app: app-k3sdemo
+    spec:
+      containers:
+        - name: k3sdemo
+          image: localhost:5000/k3sdemo
+          ports:
+          - name: api
+            containerPort: 8000
+          imagePullPolicy: Always
+          env:
+            - name: ENV
+              value: production
