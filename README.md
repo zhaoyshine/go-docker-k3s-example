@@ -1,34 +1,40 @@
 # go-docker-k3s-example
 
-This project is used to demonstrate that a go service is built to a docker image and pushed to a local docker repository, run k3s with ```single-node```, and then deployed to k3s.
+[简体中文](./README_zh.md)
+
+This project is used to demonstrate the quick deploy of go service to k3s, including building a docker image, pushing it to a local docker image repository, starting k3s on a single node, and then deploying to k3s.
 
 <br/>
 
-All of the code is just for learning, it may not be correct, please refer to it rationally, thanks
+All codes are for learning only and may be incorrect, please refer to them rationally, thank you
 
-## Start a go project
+## Go service
 
 such as k3sdemo
 
-## Server user configuration(ubuntu 20.04)
+## Server selection
+
+ubuntu 20.04
+
+## Server user configuration(optional)
 
 ```bash
 apt-get update
 ```
 
-disable password login, enable sshkey login, in the ```/etc/ssh/sshd_config``` file
+disable password login, enable pubkey login, edit in the ```/etc/ssh/sshd_config``` file
 ```
 AuthorizedKeysFile .ssh/authorized_keys
 PasswordAuthentication no
 PubkeyAuthentication yes
 ```
 
-add your pub key to ```.ssh/authorized_keys``` file, and then exec
+add your pubkey to ```.ssh/authorized_keys``` file, and then exec
 ```bash
 service sshd restart
 ```
 
-add a new user, all operations are performed under this user
+create a new user, all operations are performed under this user
 ```bash
 adduser k3suser
 ```
@@ -38,7 +44,7 @@ set new user permissions, add the following to ```/etc/sudoers```
 k3suser ALL=(ALL:ALL) ALL
 ```
 
-add your pub key to new user ```.ssh/authorized_keys``` file, switch to new user
+add your pubkey to new user ```.ssh/authorized_keys``` file, switch to new user
 ```bash
 su k3suser
 ```
@@ -47,9 +53,9 @@ and then, log out of the server and log in to k3suser@YOUR_IP
 
 <br/>
 
-## Server installation dependencies for ubuntu 20.04
+## Server installation dependencies
 
-the following commands maybe need to add sudo
+the following commands maybe need to add ```sudo```
 
 ```bash
 apt-get update
@@ -80,13 +86,12 @@ more complex passwords are recommended
 
 <br/>
 
-Install docker registry to save your docker images as a image repository
+Install docker registry to save docker images as a image repository
 ```bash
 docker run -d -p 5000:5000 --restart=always --name registry -v /var/lib/registry/data:/var/lib/registry registry:2
 ```
 
-
-get the IPAddress and replace the host address in production.yaml
+get the IPAddress and replace the host address in [production.yaml](config/production.yaml)
 ```bash
 # get postgres CONTAINER_ID
 docker ps | grep postgres
@@ -104,7 +109,7 @@ psql -U postgres
 CREATE DATABASE k3s;
 GRANT ALL PRIVILEGES ON DATABASE k3s TO postgres;
 
-# for go service
+# go service database
 CREATE DATABASE k3sdemo;
 GRANT ALL PRIVILEGES ON DATABASE k3sdemo TO postgres;
 
@@ -116,6 +121,10 @@ Install k3s
 ```bash
 curl -sfL https://rancher-mirror.oss-cn-beijing.aliyuncs.com/k3s/k3s-install.sh | INSTALL_K3S_MIRROR=cn INSTALL_K3S_SKIP_START=true sh -s - server --docker --datastore-endpoint="postgres://postgres:postgres@localhost:5432/k3s?sslmode=disable" --etcd-disable-snapshots
 ```
+
+if there is a issue with pg ssl connection when k3s start, you can add ```?sslmode=disable``` to ```/etc/systemd/system/multi-user.target.wants/k3s.service``` file ```--datastore-endpoint``` options and restart
+
+<br/>
 
 configure the address of the docker images private repository, create ```/etc/rancher/k3s/registries.yaml``` file with following:
 ```
@@ -136,7 +145,6 @@ systemctl status k3s.service
 # check k3s logs
 journalctl -u k3s.service -f
 ```
-if there is a issue with pg ssl connection when k3s start, you can add ```?sslmode=disable``` to ```/etc/systemd/system/multi-user.target.wants/k3s.service``` file ```--datastore-endpoint``` options and restart
 
 <br/>
 
@@ -147,9 +155,9 @@ killall k3s and uninstall k3s if you want
 
 <br/>
 
-## Deploy the repo to k3s
+## Deploy the go service to k3s
 
-go to the project folder
+go to the go service folder on the server
 ```bash
 cd go-docker-k3s-example/
 ```
@@ -163,7 +171,7 @@ build docker image and push image to registry
 ```bash
 make docker-build-image-prod && make docker-push-image-prod
 ```
-if you can see ```{"repositories":["k3sdemo"]}```, the image build and push is successful
+if you can see ```{"repositories":["k3sdemo"]}```, the image build and push successfully
 
 <br/>
 
