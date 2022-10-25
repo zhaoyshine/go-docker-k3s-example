@@ -155,6 +155,53 @@ killall k3s and uninstall k3s if you want
 
 <br/>
 
+## Https
+
+Install cert manager
+```bash
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.10.0/cert-manager.yaml
+```
+
+replace YOUR_EMAIL and then run following
+```bash
+kubectl apply -f deploy/letsencrypt-prod.yaml
+```
+
+```bash
+kubectl apply -f deploy/redirect-https.yaml
+```
+
+update [ingress.yaml](./deploy/ingress.yaml)
+```
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: k3sdemo-ingress
+  namespace: k3sdemo
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    traefik.ingress.kubernetes.io/router.middlewares: default-redirect-https@kubernetescrd
+spec:
+  rules:
+  - host: YOUR_HOST.com
+    http: 
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: k3sdemo-service
+            port:
+              name: api
+  tls:
+  - secretName: k3sdemo-tls
+    hosts:
+      - YOUR_HOST.com
+```
+
+<br/>
+
 ## Deploy the go service to k3s
 
 go to the go service folder on the server
